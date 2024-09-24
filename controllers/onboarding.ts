@@ -3,73 +3,8 @@ import UserModel from '../models/auth'
 import { CustomRequest } from '../middlewares/verify-jwt'
 import mongoose from 'mongoose'
 
-export const handleOnboarding = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as CustomRequest)?.token?.id
-        if(!userId) {
-            return res.status(401).json({ message: "Please login again" })
-        }
-        const { birthDate, gender, username, relationshipGoal, distancePreference, interests, pictures } = req.body
-        // if(!birthDate || !gender || !username || !relationshipGoal || !distancePreference || !interests || !pictures) {
-        //     return res.status(400).json({ message: "All credentials are required" })
-        // }
-        const userExists = await UserModel.findById(userId)
-        if(!userExists) {
-            return res.status(404).json({ message: "User does not exist" })
-        }
-        const updatedUser = await UserModel.findByIdAndUpdate(userId, { birthDate, gender, username, relationshipGoal, distancePreference, interests, pictures, onboarded: true })
-        return res.status(200).json({ message: "User onboarded successfully" })
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({ message: "An error occured" })
-    }
-}
-
 interface UpdateData {
     [key: string]: string | string[]
-}
-
-const updateUser = async (
-    res: Response,
-    field: string,
-    fieldName: string,
-    updateData: UpdateData,
-    userId: mongoose.Types.ObjectId
-) => {
-        if (!updateData[field]) {
-            return res.status(400).json({
-                message: `${fieldName} is required`,
-                success: false
-            })
-        }
-        if (
-                typeof updateData[field] === 'string' ||
-                (
-                    Array.isArray(updateData[field]) &&
-                    updateData[field].every(
-                        (item) => typeof item ==='string' && item.trim()
-                    )
-                )
-            ) {
-                const updatedUser = await UserModel.findByIdAndUpdate(
-                    userId,
-                    { [field]: updateData[field] },
-                    { new: true }
-                )
-                return res.status(200).json(
-                    {
-                        message: `${fieldName} updated successfully`,
-                        data: {
-                            payload: updatedUser
-                        },
-                        success: true
-                    }
-                )
-        } else {
-            return res.status(400).json({
-                message: `Invalid ${fieldName} type`
-            })
-        }
 }
 
 enum OnboardingStep {
@@ -82,14 +17,62 @@ enum OnboardingStep {
     Pictures
 }
 
-const stepFieldMap: Record<OnboardingStep, {field: keyof UpdateData, fieldName: string}> = {
-    [OnboardingStep.Username]: { field: "username", fieldName: "Username" },
-    [OnboardingStep.BirthDate]: { field: "birthDate", fieldName: "Birth Date" },
-    [OnboardingStep.Gender]: { field: "gender", fieldName: "Gender" },
-    [OnboardingStep.RelationshipGoal]: { field: "relationshipGoal", fieldName: "Relationship Goal" },
-    [OnboardingStep.DistancePreference]: { field: "distancePreference", fieldName: "Distance Preference" },
-    [OnboardingStep.Interests]: { field: "interests", fieldName: "Interests" },
-    [OnboardingStep.Pictures]: { field: "pictures", fieldName: "Pictures" },
+class OnboardStep {
+    field: keyof UpdateData;
+    fieldName: string;
+
+    constructor (field: keyof UpdateData, fieldName: string) {
+        this.field = field
+        this.fieldName = fieldName
+    }
+
+    validate(updateData: UpdateData): boolean {
+        const fieldValue = updateData[this.field]
+        if (typeof fieldValue === 'string') {
+            return true
+        } else if (Array.isArray(fieldValue)) {
+            return fieldValue.every(item => typeof item === 'string' && item.trim())
+        } else {
+            return false
+        }
+    }
+
+    updateUser = async (
+        res: Response,
+        updateData: UpdateData,
+        userId: mongoose.Types.ObjectId
+    ) => {
+        if (!updateData[this.field]) {
+            return res.status(400).json({
+                message: `${this.fieldName} is required`,
+                success: false
+            })
+        }
+        const updatedUser = await UserModel.findByIdAndUpdate(
+            userId,
+            { [this.field]: updateData[this.field] },
+            { new: true }
+        )
+        return res.status(200).json(
+            {
+                message: `${this.fieldName} updated successfully`,
+                data: {
+                    payload: updatedUser
+                },
+                success: true
+            }
+        )
+    }
+}
+
+const stepFieldMap: Record<OnboardingStep, OnboardStep> = {
+    [OnboardingStep.Username]: new OnboardStep("username", "Username"),
+    [OnboardingStep.BirthDate]: new OnboardStep("birthDate", "Birth Date"),
+    [OnboardingStep.Gender]: new OnboardStep("gender", "Gender"),
+    [OnboardingStep.RelationshipGoal]: new OnboardStep("relationshipGoal", "Relationship Goal"),
+    [OnboardingStep.DistancePreference]: new OnboardStep("distancePreference", "Distance Preference"),
+    [OnboardingStep.Interests]: new OnboardStep("interests", "Interests"),
+    [OnboardingStep.Pictures]: new OnboardStep("pictures", "Pictures"),
 };
 
 export const handleMultiStepOnboarding = async (req: Request, res: Response) => {
@@ -114,6 +97,12 @@ export const handleMultiStepOnboarding = async (req: Request, res: Response) => 
                 }
             )
         }
+        if (!Object.values(OnboardingStep).includes(step as OnboardingStep)) {
+            return res.status(400).json({
+                message: "Invalid Step",
+                success: false,
+            });
+        }
         const stepInfo = stepFieldMap[step as OnboardingStep]
         if (!stepInfo) {
             return res.status(400).json(
@@ -123,7 +112,15 @@ export const handleMultiStepOnboarding = async (req: Request, res: Response) => 
                 }
             )
         }
-        await updateUser(res, stepInfo.field as string, stepInfo.fieldName, updateData, userId)
+        if (!stepInfo.validate(updateData)) {
+            return res.status(400).json(
+                {
+                    message: "Invalid Data",
+                    success: false
+                }
+            )
+        }
+        await stepInfo.updateUser(res, updateData, userId)
 
     } catch (error) {
         console.log(error)
