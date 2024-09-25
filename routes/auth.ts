@@ -1,5 +1,5 @@
 import express from 'express'
-import { handleLogin, handleResetPasswword, handleSendOtp, handleSignup, handleVerifyOtp } from '../controllers/auth'
+import { handleLogin, handleResetPassword, handleSendOtp, handleSignup, handleVerifyOtp } from '../controllers/auth'
 
 const router = express.Router()
 
@@ -11,6 +11,6 @@ router.post("/signup", handleSignup)
 
 router.post("/login", handleLogin)
 
-router.post("/reset-password", handleResetPasswword)
+router.post("/reset-password", handleResetPassword)
 
 export default router
