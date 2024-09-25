@@ -40,7 +40,8 @@ class OnboardStep {
     updateUser = async (
         res: Response,
         updateData: UpdateData,
-        userId: mongoose.Types.ObjectId
+        userId: mongoose.Types.ObjectId,
+        step: any
     ) => {
         if (!updateData[this.field]) {
             return res.status(400).json({
@@ -50,7 +51,7 @@ class OnboardStep {
         }
         const updatedUser = await UserModel.findByIdAndUpdate(
             userId,
-            { [this.field]: updateData[this.field] },
+            { [this.field]: updateData[this.field], lastOnboardingStep: Number(step) },
             { new: true }
         )
         return res.status(200).json(
@@ -120,7 +121,7 @@ export const handleMultiStepOnboarding = async (req: Request, res: Response) => 
                 }
             )
         }
-        await stepInfo.updateUser(res, updateData, userId)
+        await stepInfo.updateUser(res, updateData, userId, step)
 
     } catch (error) {
         console.log(error)

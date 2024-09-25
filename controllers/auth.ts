@@ -16,7 +16,7 @@ interface AuthData {
 
 class AuthController {
     private static generateToken(userId: string): string {
-        return jwt.sign({ id: userId }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "3d" });
+        return jwt.sign({ id: userId }, process.env.ACCESS_TOKEN_SECRET!);
     }
 
     private static async hashPassword(password: string): Promise<string> {
@@ -69,7 +69,7 @@ class AuthController {
                 return res.status(404).json({ message: "OTP not found", success: false });
             }
 
-            if (existingOtp.expiresAt < new Date()) {
+            if ((new Date(existingOtp.expiresAt).getTime()) < (new Date().getTime())) {
                 return res.status(400).json({ message: "OTP expired", success: false });
             }
 
