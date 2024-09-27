@@ -31,7 +31,7 @@ class OnboardStep {
         if (typeof fieldValue === 'string') {
             return true
         } else if (Array.isArray(fieldValue)) {
-            return fieldValue.every(item => typeof item === 'string' && item.trim())
+            return fieldValue.every(item => typeof item === 'string')
         } else {
             return false
         }
@@ -51,8 +51,9 @@ class OnboardStep {
         }
         const updatedUser = await UserModel.findByIdAndUpdate(
             userId,
-            { [this.field]: updateData[this.field], lastOnboardingStep: Number(step) },
+            { [this.field]: this.field === "birthDate" ? (new Date(updateData[this.field] as string)) : this.field === "distancePreference" ? Number(updateData[this.field]) :  updateData[this.field], lastOnboardingStep: Number(step) },
             { new: true }
+            // If later needed -->  this.field === "" ? (updateData[this.field] as string[]).map(((ag: string) => Number(ag))) :
         )
         return res.status(200).json(
             {
@@ -123,6 +124,73 @@ export const handleMultiStepOnboarding = async (req: Request, res: Response) => 
         }
         await stepInfo.updateUser(res, updateData, userId, step)
 
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(
+            {
+                message: "An Error Occured",
+                success: false
+            }
+        )
+    }
+}
+
+export const handleCheckOnboardingState = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as CustomRequest)?.token?.id
+        const userExists = await UserModel.findById(userId)
+        if (!userExists) {
+            return res.status(404).json(
+                {
+                    message: "This user does not exist",
+                    success: false,
+                    payload: {
+                        userProfile: userExists
+                    }
+                }
+            )
+        }
+        if (userExists.onboarded) {
+            return res.status(200).json(
+                {
+                    message: "Onboarding Already Completed",
+                    payload: {
+                        onboardingCompleted: true,
+                        userProfile: userExists
+                    },
+                    success: true
+                }
+            )
+        }
+        const lastOnboardingStep = userExists.lastOnboardingStep
+        if (lastOnboardingStep === undefined) {
+            return res.status(200).json(
+                {
+                    message: "User has not started onboarding",
+                    data: {
+                        payload: {
+                            onboardingCompleted: false,
+                            lastOnboardingStep: 0,
+                            userProfile: userExists
+                        },
+                    },
+                    success: true,
+                }
+            )
+        }
+        return res.status(200).json(
+            {
+                message: "User is onboarding",
+                data: {
+                    payload: {
+                        onboardingCompleted:false,
+                        lastOnboardingStep,
+                        userProfile: userExists
+                    },
+                },
+                success: true,
+            }
+        )
     } catch (error) {
         console.log(error)
         return res.status(500).json(

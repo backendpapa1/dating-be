@@ -6,6 +6,7 @@ import authRouter from './routes/auth'
 import mongoose from 'mongoose'
 import { verifyJWT } from './middlewares/verify-jwt'
 import onboardingRouter from './routes/onboarding'
+import uploadRouter from './routes/upload'
 
 const app = express()
 
@@ -19,6 +20,8 @@ app.use("/auth", authRouter)
 app.use(verifyJWT)
 
 app.use("/onboarding", onboardingRouter)
+
+app.use("/upload", uploadRouter)
 
 app.use("/", (req: Request, res: Response) => {
     console.log(`${req.method} ${req.url}`)

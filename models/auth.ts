@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: false },
     password: { type: String, required: false },
     onboarded: { type: Boolean, default: false},
-    lastOnboardingStep: { type: Number, default: false },
+    lastOnboardingStep: { type: Number, default: 0 },
     birthDate: { type: Date, required: false },
     gender: { type: String, required: false },
     username: { type: String, required: false },

@@ -88,6 +88,7 @@ class AuthController {
     static async handleLogin(req: Request, res: Response): Promise<Response> {
         try {
             const { email, password } = req.body;
+            console.log(email, password, "Email and password received in the backend")
             if (!email || !password) {
                 return res.status(400).json({ message: "Please provide both email and password", success: false });
             }
