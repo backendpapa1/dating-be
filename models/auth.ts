@@ -23,12 +23,6 @@ const userSchema = new mongoose.Schema({
     school: { type: Date, required: false },
     about: { type: String, required: false },
     religion:  { type: String, required: false },
-    // Functional Informations
-    likedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    dislikedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    superlikedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    reports: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Reports' }],
 }, { timestamps: true })
 
 const optSchema = new mongoose.Schema({
