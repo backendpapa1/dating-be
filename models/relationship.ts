@@ -4,6 +4,7 @@ enum RelationshipStatus {
     Liked = 'liked',
     Superliked = 'superliked',
     Disliked = 'disliked',
+    Blocked = 'blocked',
     None = 'none'
 }
 

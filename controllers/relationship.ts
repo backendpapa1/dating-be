@@ -28,6 +28,10 @@ class RelationshipController {
         await this.handleRelationshipUpdate(req, res, RelationshipStatus.Disliked);
     }
 
+    public hanldeBlock = async (req: Request, res: Response): Promise<void> => {
+        await this.handleRelationshipUpdate(req, res, RelationshipStatus.Blocked)
+    }
+
     public handleUndo = async (req: Request, res: Response): Promise<void> => {
         await this.handleRelationshipUpdate(req, res, RelationshipStatus.None);
     }
